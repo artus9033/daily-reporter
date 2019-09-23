@@ -1,0 +1,21 @@
+{
+  "name": "reporter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node --no-deprecation index.js",
+    "package": "nexe index.js --build"
+  },
+  "author": "artus9033",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^2.4.2",
+    "inquirer": "^7.0.0",
+    "moment": "^2.24.0",
+    "nodemailer": "^6.3.0"
+  },
+  "devDependencies": {
+    "nexe": "^3.3.2"
+  }
+}
