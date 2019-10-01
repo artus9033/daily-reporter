@@ -102,7 +102,7 @@ transporter.verify(function(error, success) {
     console.error(chalk.redBright(" Błąd podczas łączenia z SMTP!"), error);
     process.exit(-1);
   } else {
-    console.log(chalk.greenBright(" Połączono z SMTP!"));
+    console.log(chalk.greenBright("Połączono z SMTP!"));
 
     inquirer
       .prompt([
@@ -164,6 +164,33 @@ transporter.verify(function(error, success) {
             next = false;
           }
         }
+
+        let dayMoment = answers1.czyDzisiaj
+          ? moment()
+          : moment(answers1.data, "DD.MM.YYYY");
+
+        let subject = `Daily report - ${dayMoment.format("MM/DD/YYYY")} (${
+          answers1.godzRozp
+        } - ${answers1.godzZakoncz})`;
+
+        let mailText = `Good ${getGreetingTime(
+          dayMoment
+        )},\n\nI am attaching a daily report for the day ${dayMoment.format(
+          "MM/DD/YYYY"
+        )}. ${
+          answers1.czyDzisiaj ? "Today" : "That day"
+        } I was working on the following:\n\n${points
+          .map(pt => `\t- ${pt}`)
+          .join("\n")}\n\nKind regards,\n${config.signature}`;
+
+        console.log("");
+        console.log("Podgląd maila:");
+        console.log("");
+        console.log(subject);
+        console.log("-".repeat(20));
+        console.log(mailText);
+        console.log("");
+
         inquirer
           .prompt([
             {
@@ -175,25 +202,11 @@ transporter.verify(function(error, success) {
             }
           ])
           .then(async confirmations => {
-            let dayMoment = answers1.czyDzisiaj
-              ? moment()
-              : moment(answers1.data);
-
             let info = await transporter.sendMail({
               from: `"${config.fromName}" <${config.email}>`,
               to: adresaci.join(", "),
-              subject: `Daily report - ${dayMoment.format("MM/DD/YYYY")} (${
-                answers1.godzRozp
-              } - ${answers1.godzZakoncz})`,
-              text: `Good ${getGreetingTime(
-                dayMoment
-              )},\n\nI am attaching a daily report for the day ${dayMoment.format(
-                "MM/DD/YYYY"
-              )}. ${
-                answers1.czyDzisiaj ? "Today" : "That day"
-              } I was working on the following:\n\n${points
-                .map(pt => `\t- ${pt}`)
-                .join("\n")}\n\nKind regards,\n${config.signature}`
+              subject: subject,
+              text: mailText
             });
 
             console.log(chalk.greenBright("Wysłano maila: %s"), info.messageId);
