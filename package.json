@@ -1,21 +1,30 @@
 {
-  "name": "reporter",
+  "name": "daily-reporter",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Tiny Node utility to automatize daily reports, written in TypeScript",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
   "scripts": {
-    "start": "node --no-deprecation index.js",
-    "package": "nexe index.js --build"
+    "start": "npm run dev",
+    "dev": "nodemon",
+    "build": "tsc",
+    "package": "npm run build && nexe -o ./DailyReporter.exe ./build/index.js"
   },
   "author": "artus9033",
   "license": "MIT",
   "dependencies": {
-    "chalk": "^2.4.2",
-    "inquirer": "^7.0.0",
-    "moment": "^2.24.0",
-    "nodemailer": "^6.3.0"
+    "chalk": "^4.1.0",
+    "email-validator": "^2.0.4",
+    "inquirer": "^7.3.3",
+    "moment": "^2.27.0",
+    "nodemailer": "^6.4.11",
+    "typescript": "^4.0.2"
   },
   "devDependencies": {
-    "nexe": "^3.3.2"
+    "@types/inquirer": "^7.3.1",
+    "@types/node": "^14.6.2",
+    "@types/nodemailer": "^6.4.0",
+    "nexe": "^3.3.7",
+    "ts-node": "^9.0.0"
   }
 }

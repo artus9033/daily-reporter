@@ -1,5 +1,6 @@
 package-lock.json
 node_modules
 config.json
-adresaci.json
-Reporter.exe
+recipients.json
+DailyReporter.exe
+build
