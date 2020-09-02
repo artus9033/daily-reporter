@@ -20,6 +20,7 @@ jobs:
       - run: npm run package
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
+          automatic_release_tag: "latest"
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
