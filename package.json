@@ -1,6 +1,6 @@
 {
   "name": "daily-reporter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Tiny Node utility to automatize daily reports, written in TypeScript",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -15,16 +15,16 @@
   "dependencies": {
     "chalk": "^4.1.0",
     "email-validator": "^2.0.4",
-    "inquirer": "^7.3.3",
-    "moment": "^2.27.0",
-    "nodemailer": "^6.4.11",
-    "typescript": "^4.0.2"
+    "inquirer": "^8.0.0",
+    "moment": "^2.29.1",
+    "nodemailer": "^6.5.0",
+    "typescript": "^4.2.3"
   },
   "devDependencies": {
     "@types/inquirer": "^7.3.1",
-    "@types/node": "^14.6.2",
-    "@types/nodemailer": "^6.4.0",
+    "@types/node": "^14.14.37",
+    "@types/nodemailer": "^6.4.1",
     "nexe": "^3.3.7",
-    "ts-node": "^9.0.0"
+    "ts-node": "^9.1.1"
   }
 }
