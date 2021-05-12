@@ -148,7 +148,7 @@ async function main() {
         fs.writeFileSync(configPath, JSON.stringify(config, null, 4));
       }
 
-      signale.log(chalk.greenBright(`Successfully loaded configuration!`));
+      signale.success(chalk.greenBright(`Successfully loaded configuration!`));
     } catch (err) {
       signale.error(chalk.redBright("Invalid config.json file: "), err);
     }
@@ -301,7 +301,7 @@ async function main() {
       signale.error(chalk.redBright("Error connecting to SMTP server!"), error);
       process.exit(-1);
     } else {
-      signale.log(chalk.greenBright("Connected with SMTP server!"));
+      signale.success(chalk.greenBright("Connected with SMTP server!"));
 
       inquirer
         .prompt([
@@ -415,7 +415,7 @@ async function main() {
                   text: mailText,
                 });
 
-                signale.log(
+                signale.success(
                   chalk.greenBright("Mail successfully sent: %s"),
                   info.messageId
                 );
