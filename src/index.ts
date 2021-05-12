@@ -5,53 +5,56 @@ import EmailValidator from "email-validator";
 import inquirer from "inquirer";
 import moment, { Moment } from "moment";
 import nodemailer from "nodemailer";
+import signale from "signale";
 
-function getGreetingTime(m: Moment) {
-  var g = null;
+const recipientsPath = "./recipients.json";
+const configPath = "./config.json";
 
-  if (!m || !m.isValid()) {
-    return;
+function getGreetingTime(date: Moment): string {
+  var timeOfDay: string = "";
+
+  if (!date || !date.isValid()) {
+    return "afternoon";
   }
 
-  var split_afternoon = 12; // 24h time to split the afternoon
-  var split_evening = 17; // 24h time to split the evening
-  var currentHour = parseFloat(m.format("HH"));
+  var splitAfternoon = 12; // 24h time to split the afternoon
+  var splitEvening = 17; // 24h time to split the evening
+  var currentHour = parseFloat(date.format("HH"));
 
-  if (currentHour >= split_afternoon && currentHour <= split_evening) {
-    g = "afternoon";
-  } else if (currentHour >= split_evening) {
-    g = "evening";
+  if (currentHour >= splitAfternoon && currentHour <= splitEvening) {
+    timeOfDay = "afternoon";
+  } else if (currentHour >= splitEvening) {
+    timeOfDay = "evening";
   } else {
-    g = "morning";
+    timeOfDay = "morning";
   }
 
-  return g;
+  return timeOfDay;
 }
 
 async function main() {
   const titleSeparator = chalk.yellowBright("===");
 
-  console.log(
+  signale.log(
     ` ${titleSeparator} ${chalk.blueBright(
       "(Daily) Reporter"
     )} ${titleSeparator} `
   );
 
-  const recipientsPath = "./recipients.json";
-  let recipients = [];
+  let recipients: string[] = [];
 
   if (fs.existsSync(recipientsPath)) {
     try {
       recipients = JSON.parse(fs.readFileSync(recipientsPath).toString());
 
-      console.log(
+      signale.success(
         chalk.greenBright(`Loaded ${recipients.length} mail recipient(s)!`)
       );
     } catch (err) {
-      console.error(chalk.redBright("Invalid recipients.json file: "), err);
+      signale.error(chalk.redBright("Invalid recipients.json file: "), err);
     }
   } else {
-    console.log(
+    signale.info(
       chalk.whiteBright(
         "The recipients.json file does not exist, creating it now..."
       )
@@ -60,8 +63,8 @@ async function main() {
     let next = true,
       recipients = [];
 
-    console.log("");
-    console.log(
+    signale.log("");
+    signale.log(
       "  Please tell me the recipients You would like to address Your reports to (to finish adding items, leave empty & accept):"
     );
 
@@ -84,7 +87,7 @@ async function main() {
         if (EmailValidator.validate(recipient)) {
           recipients.push(recipient);
         } else {
-          console.log(
+          signale.warn(
             chalk.yellowBright(
               "This does not seem to be a valid email. Please try again."
             )
@@ -105,32 +108,63 @@ async function main() {
     smtpServer: "",
     smtpPort: 587,
     signature: "",
+    SSL: false,
+    selfSigned: false,
   };
 
-  const configPath = "./config.json";
   let config = defaultConfig;
 
   if (fs.existsSync(configPath)) {
     try {
       config = JSON.parse(fs.readFileSync(configPath).toString());
 
-      console.log(chalk.greenBright(`Successfully loaded configuration!`));
+      let deletedSuperfluous: number = 0,
+        addedMissing: number = 0;
+
+      const defaultConfigKeys = Object.keys(defaultConfig);
+
+      // delete superfluous config entries
+      for (let key of Object.keys(config)) {
+        if (!defaultConfigKeys.includes(key)) {
+          delete config[key];
+          deletedSuperfluous++;
+        }
+      }
+
+      const configKeys = Object.keys(config);
+      // add missing config entries
+      for (let key of defaultConfigKeys) {
+        if (!configKeys.includes(key)) {
+          config[key] = defaultConfig[key];
+          addedMissing++;
+        }
+      }
+
+      if (deletedSuperfluous > 0 || addedMissing > 0) {
+        signale.info(
+          `Deleted ${deletedSuperfluous} obsolete, superfluous config entries & added ${addedMissing} missing entries.`
+        );
+
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 4));
+      }
+
+      signale.log(chalk.greenBright(`Successfully loaded configuration!`));
     } catch (err) {
-      console.error(chalk.redBright("Invalid config.json file: "), err);
+      signale.error(chalk.redBright("Invalid config.json file: "), err);
     }
   } else {
-    console.log(
+    signale.debug(
       chalk.whiteBright(
         "A valid config.json file does not exist, creating it now..."
       )
     );
 
-    console.log("");
-    console.log(
+    signale.log("");
+
+    signale.log(
       "  Please tell me Your desired sender name (it will be displayed in the recipients' email client, e.g. 'John Wick, PhD, Renewable Energy Tech Lead'):"
     );
-
-    defaultConfig.fromName = await new Promise((resolve, reject) => {
+    config.fromName = await new Promise((resolve, reject) => {
       inquirer
         .prompt([
           {
@@ -144,9 +178,8 @@ async function main() {
         });
     });
 
-    console.log("  Please tell me Your email:");
-
-    defaultConfig.email = await new Promise((resolve, reject) => {
+    signale.log("  Please tell me Your email address");
+    config.email = await new Promise((resolve, reject) => {
       inquirer
         .prompt([
           {
@@ -159,14 +192,14 @@ async function main() {
         });
     });
 
-    console.log("  Please tell me Your email password:");
-
-    defaultConfig.password = await new Promise((resolve, reject) => {
+    signale.log("  Please tell me Your email password");
+    config.password = await new Promise((resolve, reject) => {
       inquirer
         .prompt([
           {
             type: "password",
             name: "password",
+            mask: "*",
           },
         ])
         .then((ans) => {
@@ -174,9 +207,8 @@ async function main() {
         });
     });
 
-    console.log("  Please tell me Your SMTP server address:");
-
-    defaultConfig.smtpServer = await new Promise((resolve, reject) => {
+    signale.log("  Please tell me Your SMTP server address");
+    config.smtpServer = await new Promise((resolve, reject) => {
       inquirer
         .prompt([
           {
@@ -189,9 +221,8 @@ async function main() {
         });
     });
 
-    console.log("  Please tell me Your SMTP server port (usually 587):");
-
-    defaultConfig.smtpPort = await new Promise((resolve, reject) => {
+    signale.log("  Please tell me Your SMTP server port (usually 587)");
+    config.smtpPort = await new Promise((resolve, reject) => {
       inquirer
         .prompt([
           {
@@ -205,11 +236,8 @@ async function main() {
         });
     });
 
-    console.log(
-      "  Please configure Your signature (just name + surname, please):"
-    );
-
-    defaultConfig.signature = await new Promise((resolve, reject) => {
+    signale.log("  Please configure Your signature (e.g. 'name surname')");
+    config.signature = await new Promise((resolve, reject) => {
       inquirer
         .prompt([
           {
@@ -222,29 +250,58 @@ async function main() {
         });
     });
 
-    fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
+    signale.log("  Does Your server use SSL?");
+    config.SSL = await new Promise((resolve, reject) => {
+      inquirer
+        .prompt([
+          {
+            type: "confirm",
+            name: "SSL",
+          },
+        ])
+        .then((ans) => {
+          resolve(ans.SSL);
+        });
+    });
+
+    signale.log("  Does the server use a self-signed certificate?");
+    config.selfSigned = await new Promise((resolve, reject) => {
+      inquirer
+        .prompt([
+          {
+            type: "confirm",
+            name: "selfSigned",
+          },
+        ])
+        .then((ans) => {
+          resolve(ans.selfSigned);
+        });
+    });
+
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 4));
   }
 
   let transporter = nodemailer.createTransport({
-    debug: true,
+    debug: process.env.NODE_ENV === "development",
     host: config.smtpServer,
     port: config.smtpPort,
-    secure: false,
+    secure: config.SSL,
     auth: {
       user: config.email,
       pass: config.password,
     },
     tls: {
       ciphers: "SSLv3",
+      rejectUnauthorized: !config.selfSigned,
     },
   });
 
   transporter.verify(function (error, success) {
     if (error) {
-      console.error(chalk.redBright("Error connecting to SMTP server!"), error);
+      signale.error(chalk.redBright("Error connecting to SMTP server!"), error);
       process.exit(-1);
     } else {
-      console.log(chalk.greenBright("Connected with SMTP server!"));
+      signale.log(chalk.greenBright("Connected with SMTP server!"));
 
       inquirer
         .prompt([
@@ -283,7 +340,7 @@ async function main() {
           let next = true,
             tasks = [];
 
-          console.log(
+          signale.log(
             "  Today's tasks (to finish adding items, leave empty & accept):"
           );
 
@@ -327,17 +384,17 @@ async function main() {
             .map((task) => `\t- ${task}`)
             .join("\n")}\n\nKind regards,\n${config.signature}`;
 
-          console.log("");
-          console.log("=".repeat(20));
-          console.log("");
-          console.log("Mail preview:");
-          console.log("");
-          console.log(subject);
-          console.log("-".repeat(20));
-          console.log(mailText);
-          console.log("");
-          console.log("=".repeat(20));
-          console.log("");
+          signale.log("");
+          signale.log("=".repeat(20));
+          signale.log("");
+          signale.log("Mail preview:");
+          signale.log("");
+          signale.log(subject);
+          signale.log("-".repeat(20));
+          signale.log(mailText);
+          signale.log("");
+          signale.log("=".repeat(20));
+          signale.log("");
 
           inquirer
             .prompt([
@@ -350,7 +407,7 @@ async function main() {
               },
             ])
             .then(async (confirmations) => {
-              if (confirmations.bSend.toLowerCase() === "y") {
+              if (confirmations.bSend) {
                 let info = await transporter.sendMail({
                   from: `"${config.fromName}" <${config.email}>`,
                   to: recipients.join(", "),
@@ -358,12 +415,12 @@ async function main() {
                   text: mailText,
                 });
 
-                console.log(
+                signale.log(
                   chalk.greenBright("Mail successfully sent: %s"),
                   info.messageId
                 );
               } else {
-                console.log(chalk.redBright("Cancelled."));
+                signale.log(chalk.redBright("Cancelled sending the mail."));
               }
             });
         });

@@ -2,6 +2,6 @@
   "watch": ["src"],
   "ext": "ts,tsx,js,jsx",
   "ignore": ["src/**/*.spec.ts"],
-  "exec": "npx ts-node --project ./tsconfig.json ./src/index.ts",
+  "exec": "npx cross-env NODE_ENV=development ts-node --project ./tsconfig.json ./src/index.ts",
   "legacyWatch": true
 }
